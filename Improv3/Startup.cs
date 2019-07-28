@@ -1,21 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Mail;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.AzureAppServices;
+using System;
+using System.Net;
+using System.Net.Mail;
 
 namespace Improv3
 {
@@ -37,7 +31,6 @@ namespace Improv3
                 options.CheckConsentNeeded = context => true;
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
-
             services.Configure<IdentityOptions>(options =>
             {
                 // Default Lockout settings.
@@ -49,7 +42,7 @@ namespace Improv3
                 options.Password.RequireDigit = false;
                 options.Password.RequireLowercase = false;
                 options.Password.RequireNonAlphanumeric = false;
-                options.Password.RequireUppercase = true;
+                options.Password.RequireUppercase = false;
                 options.Password.RequiredLength = 4;
                 options.Password.RequiredUniqueChars = 0;
 
@@ -59,11 +52,10 @@ namespace Improv3
 
                 options.User.RequireUniqueEmail = true;
             });
-
             services.ConfigureApplicationCookie(options =>
             {
                 options.AccessDeniedPath = "/Identity/Account/AccessDenied";
-                options.Cookie.Name = "Improv3";
+                options.Cookie.Name = "Improv3Identity";
                 options.Cookie.HttpOnly = true;
                 options.ExpireTimeSpan = TimeSpan.FromDays(60);
                 options.LoginPath = "/Identity/Account/Login";
@@ -72,7 +64,6 @@ namespace Improv3
                 options.ReturnUrlParameter = CookieAuthenticationDefaults.ReturnUrlParameter;
                 options.SlidingExpiration = true;
             });
-
             services.AddTransient<IEmailSender>(provider =>
             {
                 var config = provider.GetRequiredService<IConfiguration>();
@@ -88,6 +79,13 @@ namespace Improv3
                     },
                     config.GetValue<string>("Email:From"));
             });
+            services.AddAuthentication()
+                .AddGoogle(options =>
+                {
+                    var googleAuthNSection = Configuration.GetSection("Authentication:Google");
+                    options.ClientId = googleAuthNSection["ClientId"];
+                    options.ClientSecret = googleAuthNSection["ClientSecret"];
+                });
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
         }
 
