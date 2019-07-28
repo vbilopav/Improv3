@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Mail;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
@@ -8,9 +10,12 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.AzureAppServices;
 
 namespace Improv3
 {
@@ -51,6 +56,8 @@ namespace Improv3
                 // Default SignIn settings.
                 options.SignIn.RequireConfirmedEmail = false;
                 options.SignIn.RequireConfirmedPhoneNumber = false;
+
+                options.User.RequireUniqueEmail = true;
             });
 
             services.ConfigureApplicationCookie(options =>
@@ -60,18 +67,32 @@ namespace Improv3
                 options.Cookie.HttpOnly = true;
                 options.ExpireTimeSpan = TimeSpan.FromDays(60);
                 options.LoginPath = "/Identity/Account/Login";
-                // ReturnUrlParameter requires 
+                // ReturnUrlParameter requires
                 //using Microsoft.AspNetCore.Authentication.Cookies;
                 options.ReturnUrlParameter = CookieAuthenticationDefaults.ReturnUrlParameter;
                 options.SlidingExpiration = true;
             });
 
-
+            services.AddTransient<IEmailSender>(provider =>
+            {
+                var config = provider.GetRequiredService<IConfiguration>();
+                return new Services.EmailSender(
+                    new SmtpClient
+                    {
+                        Host = config.GetValue<string>("Email:Smtp:Host"),
+                        Port = config.GetValue<int>("Email:Smtp:Port"),
+                        Credentials = new NetworkCredential(
+                            config.GetValue<string>("Email:Smtp:Username"),
+                            config.GetValue<string>("Email:Smtp:Password")
+                        )
+                    },
+                    config.GetValue<string>("Email:From"));
+            });
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
             if (env.IsDevelopment())
             {
@@ -80,8 +101,16 @@ namespace Improv3
             else
             {
                 app.UseExceptionHandler("/Error");
+
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
+                // app.UseHsts();
+
+                loggerFactory.AddAzureWebAppDiagnostics(
+                    new AzureAppServicesDiagnosticsSettings
+                    {
+                        OutputTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss zzz} [{Level}] {RequestId}-{SourceContext}: {Message}{NewLine}{Exception}"
+                    }
+                );
             }
 
             app.UseHttpsRedirection();

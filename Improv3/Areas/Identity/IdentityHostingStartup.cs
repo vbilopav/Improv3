@@ -15,12 +15,13 @@ namespace Improv3.Areas.Identity
         public void Configure(IWebHostBuilder builder)
         {
             builder.ConfigureServices((context, services) => {
-                services.AddDbContext<Improv3Context>(options =>
-                    options.UseSqlServer(
-                        context.Configuration.GetConnectionString("Improv3ContextConnection")));
+                services.AddDbContext<Improv3IdentityContext>(options =>
+                    options.UseNpgsql(
+                        context.Configuration.GetConnectionString("Improv3IdentityContextConnection")));
 
-                services.AddDefaultIdentity<IdentityUser>()
-                    .AddEntityFrameworkStores<Improv3Context>();
+                services.AddIdentity<ApplicationUser, IdentityRole<long>>()
+                    .AddEntityFrameworkStores<Improv3IdentityContext>()
+                    .AddDefaultTokenProviders();
             });
         }
     }
