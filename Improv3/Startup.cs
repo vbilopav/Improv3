@@ -92,7 +92,7 @@ namespace Improv3
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             if (env.IsDevelopment())
             {
@@ -103,14 +103,7 @@ namespace Improv3
                 app.UseExceptionHandler("/Error");
 
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                // app.UseHsts();
-
-                loggerFactory.AddAzureWebAppDiagnostics(
-                    new AzureAppServicesDiagnosticsSettings
-                    {
-                        OutputTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss zzz} [{Level}] {RequestId}-{SourceContext}: {Message}{NewLine}{Exception}"
-                    }
-                );
+                app.UseHsts();
             }
 
             app.UseHttpsRedirection();
