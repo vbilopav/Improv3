@@ -1,0 +1,10 @@
+do $$
+begin
+
+    create table org_units (
+        id bigint not null generated always as identity primary key,
+        name varchar(256) not null
+    );
+
+end
+$$;

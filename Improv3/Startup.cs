@@ -10,6 +10,9 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Net;
 using System.Net.Mail;
+using Improv3.Data;
+using Improv3.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace Improv3
 {
@@ -25,6 +28,10 @@ namespace Improv3
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddDbContext<PgDataContext>(options =>
+                options.UseNpgsql(Configuration.GetConnectionString("Improv3DbContextConnection"))
+            );
+            services.AddTransient<OrgUnitsService, OrgUnitsService>();
             services.Configure<CookiePolicyOptions>(options =>
             {
                 // This lambda determines whether user consent for non-essential cookies is needed for a given request.
