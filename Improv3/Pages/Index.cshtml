@@ -4,13 +4,67 @@
     ViewData["Title"] = "Home page";
 }
 
-<div class="container-fluid">
+<style>
+    #loading .spinner-grow {
+        width: 6rem; height: 6rem;
+    }
+    select {
+        cursor: pointer
+    }
+</style>
+
+<div class="text-center" id="loading">
+    <div class="spinner-grow" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
+</div>
+
+<div class="container-fluid" style="display: none">
     <div class="form-group">
         <label for="company-input">Your company:</label>
-        <input id="company-input" class="form-control form-control-lg" type="text" placeholder="Before you start, please enter name of your company here...">
-    </div>
+        <div class="input-group mb-3">
+            <input id="company-input" class="form-control form-control-lg" type="text" readonly aria-describedby="edit-company">
+            <div class="input-group-append">
+                <button id="edit-company" type="button" class="btn btn-outline-info" title="Edit company">&#9998;</button>
+            </div>
+        </div>
 
-        @*<h4 class="lead">Please edit you organizational units here:</h4>
+        <label for="sector-select">Select sector or create new one:</label>
+        <div class="input-group mb-3">
+            <select id="sector-select" class="custom-select custom-select-lg" style="cursor: pointer" aria-describedby="button-group">
+                <option selected class="text-muted">select sector</option>
+            </select>
+            <div class="input-group-append" id="button-group">
+                <button id="edit-sector" type="button" class="btn btn-outline-info" title="Edit selected sector">&#9998;</button>
+                <button id="add-sector" type="button" class="btn btn-outline-info" title="New sector">&#10133;</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modal-input-dlg" tabindex="-1" role="dialog" aria-labelledby="model-input-center-title" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="model-input-center-title">Modal title</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input id="modal-input" class="form-control form-control-lg" type="text" placeholder="" spellcheck="false" autocomplete="off">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@*<h4 class="lead">Please edit you organizational units here:</h4>
         <table class="table">
             <thead>
                 <tr>
@@ -32,4 +86,8 @@
             </tbody>
         </table>*@
 
-</div>
+
+
+@section scripts {
+    <script src="~/js/companyAdmin.js" asp-append-version="true"></script>
+}
