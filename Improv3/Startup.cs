@@ -31,7 +31,7 @@ namespace Improv3
             services.AddDbContext<PgDataContext>(options =>
                 options.UseNpgsql(Configuration.GetConnectionString("Improv3DbContextConnection"))
             );
-            services.AddTransient<OrgUnitsService, OrgUnitsService>();
+            services.AddTransient<DataService, DataService>();
             services.Configure<CookiePolicyOptions>(options =>
             {
                 // This lambda determines whether user consent for non-essential cookies is needed for a given request.

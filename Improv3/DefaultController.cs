@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Improv3.Data;
+using Improv3.Pages;
 using Improv3.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,12 +12,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Improv3
 {
-    [Route("api/orgunits")]
+    [Route("api/default")]
     public class OrgUnitsController : Controller
     {
-        private readonly OrgUnitsService _org;
+        private readonly DataService _org;
 
-        public OrgUnitsController(OrgUnitsService org)
+        public OrgUnitsController(DataService org)
         {
             _org = org;
         }
@@ -24,9 +25,14 @@ namespace Improv3
         // GET: api/<controller>
         [HttpGet]
         [Authorize]
-        public async Task<IEnumerable<OrgUnits>> Get()
+        public async Task<object> Get()
         {
-            return await _org.GetOrgUnits();
+            var (company, sectors) = await _org.GetCompanyAndSectorsByUserId(this.User.GetId());
+            return new
+            {
+                Company = company,
+                Sectors = sectors
+            };
         }
 
         /*
