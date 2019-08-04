@@ -6,8 +6,10 @@
 
 <style>
     #loading .spinner-grow {
-        width: 6rem; height: 6rem;
+        width: 6rem;
+        height: 6rem;
     }
+
     select {
         cursor: pointer
     }
@@ -49,6 +51,62 @@
             </div>
         </div>
     </div>
+
+    <div id="table-wrap">
+        <div class="text-center">
+            <div class="spinner-grow" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col" style="width: 50px;">Id</th>
+                <th scope="col">First name</th>
+                <th scope="col">Last name</th>
+                <th scope="col">Email</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+            <th scope="row">new</th>
+                <td>
+                    <input type="text" class="form-control" value="" />
+                </td>
+                <td>
+                    <input type="text" class="form-control" value="" />
+                </td>
+                <td>
+                    <input type="text" class="form-control" value="" />
+                </td>
+            </tr>
+        @*<tr>
+            <th scope="row">1</th>
+            <td>
+                <input type="text" class="form-control" value="name1" />
+            </td>
+            <td>
+                <input type="text" class="form-control" value="last1" />
+            </td>
+            <td>
+                <input type="text" class="form-control" value="email1" />
+            </td>
+        </tr>
+        <tr>
+            <th scope="row">2</th>
+            <td>
+                <input type="text" class="form-control" value="name2" />
+            </td>
+            <td>
+                <input type="text" class="form-control" value="last2" />
+            </td>
+            <td>
+                <input type="text" class="form-control" value="email2" />
+            </td>
+        </tr>*@
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <!-- Modal -->
@@ -74,29 +132,31 @@
 
 
 @*<h4 class="lead">Please edit you organizational units here:</h4>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th scope="col" style="width: 50px;">Id</th>
-                    <th scope="col">Name</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <th scope="row">1</th>
-                    <td>
-                        <input type="text" class="form-control" value="org1" />
-                    </td>
-                </tr>
-                <tr>
-                    <th scope="row">2</th>
-                    <td>org2</td>
-                </tr>
-            </tbody>
-        </table>*@
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col" style="width: 50px;">Id</th>
+                <th scope="col">Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <th scope="row">1</th>
+                <td>
+                    <input type="text" class="form-control" value="org1" />
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">2</th>
+                <td>org2</td>
+            </tr>
+        </tbody>
+    </table>*@
 
 
 
 @section scripts {
+    <script src="~/js/pubsub.js" asp-append-version="false"></script>
     <script src="~/js/companyAdmin.js" asp-append-version="true"></script>
+    <script src="~/js/employees.js" asp-append-version="true"></script>
 }

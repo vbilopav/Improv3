@@ -38,7 +38,6 @@ begin
     create table employees (
         id int not null generated always as identity primary key,
         sector_id int not null,
-        user_id int null,
         first_name varchar(256) not null,
         last_name varchar(256) not null,
         email varchar(512) not null,
@@ -46,11 +45,7 @@ begin
         constraint fk_employees_sector_id__sectors_id foreign key (sector_id)
         references sectors (id)
         on update no action
-        on delete cascade,
-        constraint fk_employees_user_id__indetity_user_id foreign key (user_id)
-        references identity.user (id)
-        on update no action
-        on delete no action
+        on delete cascade
     );
     drop index if exists idx_employees_sector_id;
     create index idx_employees_sector_id on employees using btree (sector_id);
@@ -149,8 +144,24 @@ begin
     return _result;
     
     exception when unique_violation then
-        raise debug 'unique_violation for input %s', _sector;
-        return _sector;
+        raise warning 'unique_violation for sector %s', _sector;
+        return '{"error": "unique_violation"}'::json;
 end
 $$ language plpgsql;
+
+create function select_employees_by_sector(_sector_id int)
+returns json as
+$$
+begin
+    return (
+        select coalesce(json_agg(e), '[]') from (
+            select id, first_name, last_name, email 
+            from employees 
+            where sector_id = _sector_id 
+            order by id desc
+        ) e
+    );
+end
+$$ language plpgsql;
+
 

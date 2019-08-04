@@ -4,7 +4,10 @@
         id: number,
         name: string;
     };
-    type DefaultDataType = {
+    interface ISectorResponse extends IdAndNameType {
+        error?: string
+    };
+    interface IDefaultDataType {
         company: IdAndNameType,
         sectors: Array<IdAndNameType>;
     };
@@ -60,11 +63,12 @@
         addSectorBtn.attr("disabled", "").find("span").show();
         $.post("api/update-sector",
             JSON.stringify({ name: value, company_id: companyInput.data("id"), attributes: {location: document.location.href}}),
-            (response: IdAndNameType) => {
-                if (!response) {
-                    throw response;
-                };
+            (response: ISectorResponse) => {
                 addSectorBtn.removeAttr("disabled").find("span").hide();
+                if (response.error) {
+                    console.warn(response.error);
+                    return;
+                };
                 sectorSelect.find("option:selected").removeAttr("selected");
                 sectorSelect.append(
                     `<option value=${response.id} selected>${response.name}</option>`);
@@ -76,14 +80,26 @@
         editSectorBtn.attr("disabled", "").find("span").show();
         $.post("api/update-sector",
             JSON.stringify({ name: value, company_id: companyInput.data("id"), attributes: {location: document.location.href}}),
-            (response: IdAndNameType) => {
+            (response: ISectorResponse) => {
                 editSectorBtn.removeAttr("disabled").find("span").hide();
-                if (!response) {
-                    throw response;
-                }
+                if (response.error) {
+                    console.warn(response.error);
+                    return;
+                };
                 sectorSelect.find("option:selected").text(response.name);
             });
     };
+
+    const validateSector = (value: string) => {
+        const elements = sectorSelect.find("option") as any;
+        for (let e of elements) {
+            const opt = $(e);
+            if (value && opt.text() === value) {
+                return `Sector with that name already exists. Try different name.`;
+            }
+        }
+        return false;
+    }
 
     const inputDialog = $("#modal-input-dlg");
     const modalOk = inputDialog.find(".btn-primary");
@@ -111,6 +127,14 @@
             tooltip(modalInput, "enter different value and try again!");
             return;
         }
+        const validate = modalInput.data("validate");
+        if (validate) {
+            const result = validate(val);
+            if (result) {
+                tooltip(modalInput, result);
+                return;
+            }
+        }
         inputDialog.modal("hide");
         modalInput.data("type")(val);
     });
@@ -126,19 +150,21 @@
     });
 
     sectorSelect.change(() => {
-        const {id} = selectedSector();
+        const {id, name} = selectedSector();
         selectedSectorStorage(id == null ? null : String(id));
         if (id == null) {
             editSectorBtn.attr("disabled", "");
         } else {
             editSectorBtn.removeAttr("disabled");
         }
+        (window as any).publish("/sector/change", id, name);
     });
 
     addSectorBtn.click(() => {
         modalTitle.html("Enter new sector name");
         modalInput
             .data("type", newSector)
+            .data("validate", validateSector)
             .data("value", "")
             .val("")
             .attr("placeholder", "new sector name");
@@ -153,13 +179,14 @@
         }
         modalInput
             .data("type", editSector)
+            .data("validate", validateSector)
             .data("value", name)
             .val(name)
             .attr("placeholder", "new name for this sector");
         inputDialog.modal("show").on("shown.bs.modal", () => modalInput.focus());
     });
 
-    $.getJSON("api/company-and-sectors", (response: DefaultDataType) => {
+    $.getJSON("api/company-and-sectors", (response: IDefaultDataType) => {
         $("#loading").hide();
         $(".container-fluid").show("fast", "swing");
 

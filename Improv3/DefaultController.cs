@@ -40,13 +40,13 @@ namespace Improv3
         {
             try
             {
-                return Content(await _data.GetString("select update_company(@id, @company::json)",
-                        async parameters =>
-                        {
-                            parameters.AddWithValue("id", this.User.GetId());
-                            parameters.AddWithValue("company", await this.Request.GetBodyWithAttrAsync());
-                        }),
-                    "application/json");
+                var result = await _data.GetString("select update_company(@id, @company::json)",
+                    async parameters =>
+                    {
+                        parameters.AddWithValue("id", this.User.GetId());
+                        parameters.AddWithValue("company", await this.Request.GetBodyWithAttrAsync());
+                    });
+                return Content(result,"application/json");
             }
             catch (PostgresException e)
             {
@@ -63,11 +63,11 @@ namespace Improv3
         {
             try
             {
-                return Content(await _data.GetString("select update_sectors(@sector::json)",
-                        async parameters => parameters.AddWithValue("sector", await this.Request.GetBodyWithAttrAsync())),
-                    "application/json");
+                var result = await _data.GetString("select update_sectors(@sector::json)",
+                    async parameters => parameters.AddWithValue("sector", await this.Request.GetBodyWithAttrAsync()));
+                return Content(result, "application/json");
             }
-            catch (Exception e)
+            catch (PostgresException e)
             {
                 _logger.LogError(e, "Error in PostSectorAsync");
                 var content = Content(e.Message);
@@ -75,5 +75,13 @@ namespace Improv3
                 return content;
             }
         }
+
+        [HttpGet]
+        [Route("api/employees_by_sector")]
+        public async Task<ContentResult> GetEmployeesBySector(int sectorId) =>
+            Content(await _data.GetString(
+                "select select_employees_by_sector(@id)",
+                parameters => parameters.AddWithValue("id", sectorId))
+            );
     }
 }

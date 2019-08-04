@@ -41,6 +41,7 @@ namespace Improv3.Services
                 {
                     await parameters?.Invoke(cmd.Parameters);
                 }
+
                 using (var reader = cmd.ExecuteReader())
                     return await reader.ReadAsync() ? reader.GetString(0) : null;
             }
