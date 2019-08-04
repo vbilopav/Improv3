@@ -1,13 +1,70 @@
 "use strict";
 (function () {
-    var data;
     var companyInput = $("#company-input");
+    var editCompanyBtn = $("#edit-company");
     var sectorSelect = $("#sector-select");
+    var editSectorBtn = $("#edit-sector");
+    var addSectorBtn = $("#add-sector");
+    var selectedSectorStorage = function (value) {
+        if (value === void 0) { value = undefined; }
+        if (value === undefined) {
+            return localStorage.getItem("improv3-selected-sector");
+        }
+        else {
+            localStorage.setItem("improv3-selected-sector", value);
+        }
+    };
+    var selectedSector = function () {
+        var e = sectorSelect.find("option:selected");
+        var id = e.attr("value") ? Number(e.attr("value")) : null;
+        return {
+            id: id,
+            name: e.text()
+        };
+    };
+    var bindSectors = function (sectors, selectedValue) {
+        if (selectedValue === void 0) { selectedValue = null; }
+        sectorSelect.html("<option selected class='text-muted'>select sector</option>");
+        selectedValue = selectedValue || selectedSectorStorage();
+        if (sectors.length) {
+            for (var _i = 0, sectors_1 = sectors; _i < sectors_1.length; _i++) {
+                var entry = sectors_1[_i];
+                sectorSelect.append("<option value=" + entry.id + " " + (selectedValue === String(entry.id) ? "selected" : "") + ">" + entry.name + "</option>");
+            }
+        }
+    };
     var editCompany = function (value) {
-        console.log("editCompany", value);
-        $.post("test.php", { name: "John", time: "2pm" })
-            .done(function (data) {
-            alert("Data Loaded: " + data);
+        editCompanyBtn.attr("disabled", "").find("span").show();
+        $.post("api/update-company", JSON.stringify({ name: value, attributes: { location: document.location.href } }), function (response) {
+            editCompanyBtn.removeAttr("disabled").find("span").hide();
+            var lastId = companyInput.data("id");
+            companyInput.val(response.name).data("id", response.id);
+            if (lastId === undefined) {
+                setTimeout(function () { return addSectorBtn.click(); }, 500);
+            }
+        });
+    };
+    var newSector = function (value) {
+        addSectorBtn.attr("disabled", "").find("span").show();
+        $.post("api/update-sector", JSON.stringify({ name: value, company_id: companyInput.data("id"), attributes: { location: document.location.href } }), function (response) {
+            if (!response) {
+                throw response;
+            }
+            ;
+            addSectorBtn.removeAttr("disabled").find("span").hide();
+            sectorSelect.find("option:selected").removeAttr("selected");
+            sectorSelect.append("<option value=" + response.id + " selected>" + response.name + "</option>");
+            sectorSelect.change();
+        });
+    };
+    var editSector = function (value) {
+        editSectorBtn.attr("disabled", "").find("span").show();
+        $.post("api/update-sector", JSON.stringify({ name: value, company_id: companyInput.data("id"), attributes: { location: document.location.href } }), function (response) {
+            editSectorBtn.removeAttr("disabled").find("span").hide();
+            if (!response) {
+                throw response;
+            }
+            sectorSelect.find("option:selected").text(response.name);
         });
     };
     var inputDialog = $("#modal-input-dlg");
@@ -19,15 +76,6 @@
         modalInput.tooltip("dispose");
         e.keyCode === 13 && modalOk.click();
         return true;
-    });
-    var editCompanyBtn = $("#edit-company").click(function () {
-        modalTitle.html("Enter company name");
-        inputDialog.modal("show").on("shown.bs.modal", function () { return modalInput
-            .data("type", editCompany)
-            .data("value", data.company.name)
-            .val(data.company.name)
-            .attr("placeholder", "company title")
-            .focus(); });
     });
     var tooltip = function (e, title) { return e
         .tooltip("dispose")
@@ -47,21 +95,57 @@
         inputDialog.modal("hide");
         modalInput.data("type")(val);
     });
-    $.getJSON("/api/default/", function (response) {
-        $("#loading").hide();
-        $(".container-fluid").show("fast", "swing");
-        if (response.company) {
-            companyInput.val(response.company.name);
+    editCompanyBtn.click(function () {
+        modalTitle.html("Enter company name");
+        modalInput
+            .data("type", editCompany)
+            .data("value", companyInput.val())
+            .val(companyInput.val())
+            .attr("placeholder", "company title");
+        inputDialog.modal("show").on("shown.bs.modal", function () { return modalInput.focus(); });
+    });
+    sectorSelect.change(function () {
+        var id = selectedSector().id;
+        selectedSectorStorage(id == null ? null : String(id));
+        if (id == null) {
+            editSectorBtn.attr("disabled", "");
         }
         else {
+            editSectorBtn.removeAttr("disabled");
+        }
+    });
+    addSectorBtn.click(function () {
+        modalTitle.html("Enter new sector name");
+        modalInput
+            .data("type", newSector)
+            .data("value", "")
+            .val("")
+            .attr("placeholder", "new sector name");
+        inputDialog.modal("show").on("shown.bs.modal", function () { return modalInput.focus(); });
+    });
+    editSectorBtn.click(function () {
+        modalTitle.html("Change name for this sector");
+        var _a = selectedSector(), id = _a.id, name = _a.name;
+        if (id == null) {
+            return;
+        }
+        modalInput
+            .data("type", editSector)
+            .data("value", name)
+            .val(name)
+            .attr("placeholder", "new name for this sector");
+        inputDialog.modal("show").on("shown.bs.modal", function () { return modalInput.focus(); });
+    });
+    $.getJSON("api/company-and-sectors", function (response) {
+        $("#loading").hide();
+        $(".container-fluid").show("fast", "swing");
+        if (!response.company) {
             editCompanyBtn.click();
         }
-        if (response.sectors.length) {
-            for (var _i = 0, _a = response.sectors; _i < _a.length; _i++) {
-                var entry = _a[_i];
-                sectorSelect.append("<option value=" + entry.id + ">" + entry.name + "</option>");
-            }
+        else {
+            companyInput.val(response.company.name).data("id", response.company.id);
         }
-        data = response;
+        bindSectors(response.sectors);
+        sectorSelect.change();
     });
 })();

@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Npgsql.NameTranslation;
 
 namespace Improv3
@@ -19,6 +23,33 @@ namespace Improv3
             }
 
             return Convert.ToInt32(id);
+        }
+    }
+
+    public static class HttpExtensions
+    {
+        public static async Task<string> GetBodyAsync(this HttpRequest request)
+        {
+            using (var reader = new StreamReader(request.Body, Encoding.UTF8))
+            {
+                return await reader.ReadToEndAsync();
+            }
+        }
+
+        public static async Task<string> GetBodyWithAttrAsync(this HttpRequest request)
+        {
+            var body = await request.GetBodyAsync();
+            var json = JsonConvert.DeserializeObject<dynamic>(body);
+            if (json["attributes"] != null)
+            {
+                json.attributes.clientIp = request.HttpContext.Connection.RemoteIpAddress.ToString();
+            }
+            else
+            {
+                json.attributes = new {clientIp = request.HttpContext.Connection.RemoteIpAddress.ToString()};
+            }
+
+            return JsonConvert.SerializeObject(json);
         }
     }
 

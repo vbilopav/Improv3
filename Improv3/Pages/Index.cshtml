@@ -25,7 +25,10 @@
         <div class="input-group mb-3">
             <input id="company-input" class="form-control form-control-lg" type="text" readonly aria-describedby="edit-company">
             <div class="input-group-append">
-                <button id="edit-company" type="button" class="btn btn-outline-info" title="Edit company">&#9998;</button>
+                <button id="edit-company" type="button" class="btn btn-outline-info" title="Edit company">
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none"></span>
+                    &#9998;
+                </button>
             </div>
         </div>
 
@@ -35,8 +38,14 @@
                 <option selected class="text-muted">select sector</option>
             </select>
             <div class="input-group-append" id="button-group">
-                <button id="edit-sector" type="button" class="btn btn-outline-info" title="Edit selected sector">&#9998;</button>
-                <button id="add-sector" type="button" class="btn btn-outline-info" title="New sector">&#10133;</button>
+                <button id="edit-sector" type="button" class="btn btn-outline-info" title="Edit selected sector">
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none"></span>
+                    &#9998;
+                </button>
+                <button id="add-sector" type="button" class="btn btn-outline-info" title="New sector">
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none"></span>
+                    &#10133;
+                </button>
             </div>
         </div>
     </div>
