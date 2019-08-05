@@ -2,6 +2,14 @@
 (function () {
     ;
     ;
+    var post = function (url, request, success) { return $.ajax({
+        url: url,
+        type: "POST",
+        data: JSON.stringify(request),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: success
+    }); };
     var companyInput = $("#company-input");
     var editCompanyBtn = $("#edit-company");
     var sectorSelect = $("#sector-select");
@@ -37,7 +45,7 @@
     };
     var editCompany = function (value) {
         editCompanyBtn.attr("disabled", "").find("span").show();
-        $.post("api/update-company", JSON.stringify({ name: value, attributes: { location: document.location.href } }), function (response) {
+        post("api/update-company", { name: value, attributes: { location: document.location.href } }, function (response) {
             editCompanyBtn.removeAttr("disabled").find("span").hide();
             var lastId = companyInput.data("id");
             companyInput.val(response.name).data("id", response.id);
@@ -48,7 +56,7 @@
     };
     var newSector = function (value) {
         addSectorBtn.attr("disabled", "").find("span").show();
-        $.post("api/update-sector", JSON.stringify({ name: value, company_id: companyInput.data("id"), attributes: { location: document.location.href } }), function (response) {
+        post("api/update-sector", { name: value, companyId: companyInput.data("id"), attributes: { location: document.location.href } }, function (response) {
             addSectorBtn.removeAttr("disabled").find("span").hide();
             if (response.error) {
                 console.warn(response.error);
@@ -62,7 +70,7 @@
     };
     var editSector = function (value) {
         editSectorBtn.attr("disabled", "").find("span").show();
-        $.post("api/update-sector", JSON.stringify({ name: value, company_id: companyInput.data("id"), attributes: { location: document.location.href } }), function (response) {
+        post("api/update-sector", { name: value, companyId: companyInput.data("id"), attributes: { location: document.location.href } }, function (response) {
             editSectorBtn.removeAttr("disabled").find("span").hide();
             if (response.error) {
                 console.warn(response.error);

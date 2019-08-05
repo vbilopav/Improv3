@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Npgsql;
 using Npgsql.NameTranslation;
 
@@ -38,21 +39,15 @@ namespace Improv3
                 return await reader.ReadToEndAsync();
             }
         }
+    }
 
-        public static async Task<string> GetBodyWithAttrAsync(this HttpRequest request)
+    public static class JObjectExtensions
+    {
+        public static void AddAttribute(this JObject obj, string key, string value)
         {
-            var body = await request.GetBodyAsync();
-            var json = JsonConvert.DeserializeObject<dynamic>(body);
-            if (json["attributes"] != null)
-            {
-                json.attributes.clientIp = request.HttpContext.Connection.RemoteIpAddress.ToString();
-            }
-            else
-            {
-                json.attributes = new {clientIp = request.HttpContext.Connection.RemoteIpAddress.ToString()};
-            }
-
-            return JsonConvert.SerializeObject(json);
+            var attributes = obj["attributes"] ?? JToken.Parse("{}");
+            attributes[key] = value;
+            obj["attributes"] = obj;
         }
     }
 

@@ -12,6 +12,15 @@
         sectors: Array<IdAndNameType>;
     };
 
+    const post = (url: string, request: any, success: ((response: any) => void)) => $.ajax({
+            url: url,
+            type: "POST",
+            data: JSON.stringify(request),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: success
+        });
+
     const companyInput = $("#company-input");
     const editCompanyBtn = $("#edit-company");
     const sectorSelect = $("#sector-select");
@@ -47,8 +56,8 @@
 
     const editCompany = (value: string) => {
         editCompanyBtn.attr("disabled", "").find("span").show();
-        $.post("api/update-company",
-            JSON.stringify({ name: value, attributes: { location: document.location.href } }),
+        post("api/update-company",
+            { name: value, attributes: { location: document.location.href } },
             (response: IdAndNameType) => {
                 editCompanyBtn.removeAttr("disabled").find("span").hide();
                 const lastId = companyInput.data("id");
@@ -61,8 +70,8 @@
 
     const newSector = (value: string) => {
         addSectorBtn.attr("disabled", "").find("span").show();
-        $.post("api/update-sector",
-            JSON.stringify({ name: value, company_id: companyInput.data("id"), attributes: {location: document.location.href}}),
+        post("api/update-sector",
+            {name: value, companyId: companyInput.data("id"), attributes: {location: document.location.href}},
             (response: ISectorResponse) => {
                 addSectorBtn.removeAttr("disabled").find("span").hide();
                 if (response.error) {
@@ -78,8 +87,8 @@
 
     const editSector = (value: string) => {
         editSectorBtn.attr("disabled", "").find("span").show();
-        $.post("api/update-sector",
-            JSON.stringify({ name: value, company_id: companyInput.data("id"), attributes: {location: document.location.href}}),
+        post("api/update-sector",
+            {name: value, companyId: companyInput.data("id"), attributes: {location: document.location.href }},
             (response: ISectorResponse) => {
                 editSectorBtn.removeAttr("disabled").find("span").hide();
                 if (response.error) {
@@ -114,6 +123,7 @@
     const tooltip = (e: JQuery, title: string) => e
         .tooltip("dispose")
         .attr("title", title)
+        .tooltip({ trigger: "manual" })
         .tooltip("show")
         .focus();
 

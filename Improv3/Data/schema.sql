@@ -4,6 +4,8 @@ begin
     drop function if exists select_company_and_sectors(int);
     drop function if exists update_company(int, json);
     drop function if exists update_sectors(json);
+    drop function if exists select_employees_by_sector(int);
+    drop function if exists update_employees(_employee json);
     drop table if exists employees;
     drop table if exists sectors;
     drop table if exists companies;
@@ -45,7 +47,8 @@ begin
         constraint fk_employees_sector_id__sectors_id foreign key (sector_id)
         references sectors (id)
         on update no action
-        on delete cascade
+        on delete cascade,
+        unique (email)
     );
     drop index if exists idx_employees_sector_id;
     create index idx_employees_sector_id on employees using btree (sector_id);
@@ -118,12 +121,12 @@ declare _id int;
 declare _attributes json;
 begin
 
-    _company_id = (_sector->>'company_id')::int;
+    _company_id = (_sector->>'companyId')::int;
     _id = (_sector->>'id')::int;
     raise info 'id=%, company_id=%, name=%', _id, _company_id, _sector->>'name';
     _attributes = extract_record_attributes(_sector);
 
-    if _sector->>'id' is null then
+    if _id is null then
         with cte as (
             insert into sectors (name, company_id, attributes) 
             values (_sector->>'name', _company_id, _attributes)
@@ -153,14 +156,61 @@ create function select_employees_by_sector(_sector_id int)
 returns json as
 $$
 begin
+    raise info '_sector_id=%', _sector_id;
     return (
         select coalesce(json_agg(e), '[]') from (
-            select id, first_name, last_name, email 
+            select id, first_name as "firstName", last_name as "lastName", email 
             from employees 
             where sector_id = _sector_id 
-            order by id desc
+            order by id asc
         ) e
     );
+end
+$$ language plpgsql;
+
+create function update_employees(_employee json)
+returns json as
+$$
+declare _result json;
+declare _sector_id int;
+declare _id int;
+declare _attributes json;
+begin
+
+    _sector_id = (_employee->>'sectorId')::int;
+    _id = (_employee->>'id')::int;
+    raise info 'id=%, sector_id=%, first_name=%, last_name=%, email=%', 
+               _id,  _sector_id,  _employee->>'firstName', _employee->>'lastName', _employee->>'email';
+    _attributes = extract_record_attributes(_employee);
+
+    if _id is null then
+        with cte as (
+            insert into employees (first_name, last_name, email, sector_id, attributes) 
+            values (_employee->>'firstName', _employee->>'lastName', _employee->>'email', _sector_id, _attributes)
+            returning id, first_name as "firstName", last_name as "lastName", email
+        )
+        select to_json(cte) into _result from cte;
+        
+    else
+        with cte as (
+            update employees 
+            set  
+                sector_id = _sector_id, 
+                first_name = _employee->>'firstName',
+                last_name = _employee->>'lastName', 
+                email = _employee->>'email',
+                attributes = _attributes
+            where id = _id
+            returning id, first_name as "firstName", last_name as "lastName", email
+        )
+        select to_json(cte) into _result from cte;
+    end if;
+
+    return _result;
+    
+    exception when unique_violation then
+        raise warning 'unique_violation for sector %s', _sector;
+        return '{"error": "unique_violation"}'::json;
 end
 $$ language plpgsql;
 

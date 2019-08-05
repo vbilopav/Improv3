@@ -1,18 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Improv3.Services;
+﻿using Improv3.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Logging;
-using Npgsql;
-using NpgsqlTypes;
+using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace Improv3
 {
@@ -20,12 +11,10 @@ namespace Improv3
     public class DefaultController : Controller
     {
         private readonly DataService _data;
-        private readonly ILogger<DefaultController> _logger;
 
-        public DefaultController(DataService data, ILogger<DefaultController> logger)
+        public DefaultController(DataService data)
         {
             _data = data;
-            _logger = logger;
         }
 
         [HttpGet]
@@ -36,52 +25,45 @@ namespace Improv3
 
         [HttpPost]
         [Route("api/update-company")]
-        public async Task<ContentResult> PostCompanyAsync()
+        public async Task<ContentResult> PostCompanyAsync([FromBody]JObject request)
         {
-            try
-            {
-                var result = await _data.GetString("select update_company(@id, @company::json)",
-                    async parameters =>
-                    {
-                        parameters.AddWithValue("id", this.User.GetId());
-                        parameters.AddWithValue("company", await this.Request.GetBodyWithAttrAsync());
-                    });
-                return Content(result,"application/json");
-            }
-            catch (PostgresException e)
-            {
-                _logger.LogError(e, "Error in PostCompanyAsync");
-                var content = Content(e.Message);
-                content.StatusCode = 400;
-                return content;
-            }
+            request.AddAttribute("clientIp", Request.HttpContext.Connection.RemoteIpAddress.ToString());
+
+            var result = await _data.GetString("select update_company(@id, @company::json)",
+                parameters =>
+                {
+                    parameters.AddWithValue("id", this.User.GetId());
+                    parameters.AddWithValue("company", request.ToString());
+                });
+            return Content(result,"application/json");
         }
 
         [HttpPost]
         [Route("api/update-sector")]
-        public async Task<ContentResult> PostSectorAsync()
+        public async Task<ContentResult> PostSectorAsync([FromBody]JObject request)
         {
-            try
-            {
-                var result = await _data.GetString("select update_sectors(@sector::json)",
-                    async parameters => parameters.AddWithValue("sector", await this.Request.GetBodyWithAttrAsync()));
-                return Content(result, "application/json");
-            }
-            catch (PostgresException e)
-            {
-                _logger.LogError(e, "Error in PostSectorAsync");
-                var content = Content(e.Message);
-                content.StatusCode = 400;
-                return content;
-            }
+            request.AddAttribute("clientIp", Request.HttpContext.Connection.RemoteIpAddress.ToString());
+            var result = await _data.GetString("select update_sectors(@sector::json)",
+                parameters => parameters.AddWithValue("sector", request.ToString()));
+            return Content(result, "application/json");
         }
 
         [HttpGet]
-        [Route("api/employees_by_sector")]
+        [Route("api/employees-by-sector")]
         public async Task<ContentResult> GetEmployeesBySector(int sectorId) =>
             Content(await _data.GetString(
                 "select select_employees_by_sector(@id)",
                 parameters => parameters.AddWithValue("id", sectorId))
             );
+
+        [HttpPost]
+        [Route("api/update-employee")]
+        public async Task<ContentResult> PostEmployeeAsync([FromBody]JObject request)
+        {
+            request.AddAttribute("clientIp", Request.HttpContext.Connection.RemoteIpAddress.ToString());
+            var result = await _data.GetString("select update_employees(@employee::json)",
+                parameters => parameters.AddWithValue("employee", request.ToString()));
+            return Content(result, "application/json");
+        }
     }
 }
