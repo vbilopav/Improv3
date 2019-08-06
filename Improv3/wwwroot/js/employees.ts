@@ -74,6 +74,9 @@
         tbody.append(row);
     };
 
+    const tooltip = (e: JQuery, msg: string) =>
+        e.tooltip("dispose").attr("title", msg).tooltip({ trigger: "manual" }).tooltip("show");
+
     const handleTableInputChange = (row: JQuery, done: (()=>void)) => {
         const inputs = row.find("input");
         const rowEl = row.find("th>div.row-id");
@@ -93,7 +96,7 @@
             return done();
         }
         if (!validateEmail(employee.email)) {
-            $(inputs[2]).tooltip("dispose").attr("title", "Email is not valid.").tooltip({ trigger: "manual" }).tooltip("show");
+            tooltip($(inputs[2]), "Email is not valid.");
             return done();
         }
         $(inputs[2]).tooltip("dispose");
@@ -106,14 +109,15 @@
                 if (employee.id == null) {
                     addRow({ id: null, firstName: "", lastName: "", email: "" });
                 }
-                row.data("id", employee.id);
-            }).always(done).fail(() => {
-                rowEl.css("color", "red");
+                row.data("id", response.id);
+            }).always(done).fail((response: any) => {
+                console.warn(response.responseJSON);
+                tooltip(rowEl.css("color", "red"), "Couldn't update this row. There is something wrong with database.");
             });
     }
 
     const inputChanged = (row: JQuery) => {
-        row.find("input.email").tooltip("dispose");
+        row.find("input, div").tooltip("dispose");
         toggleLoadingRow(row, true);
         if (inputTimeout) {
             clearTimeout(inputTimeout);
@@ -124,6 +128,7 @@
     }
 
     $.getJSON("api/employees-by-sector?sectorId=" + id, (response: Array<IEmployee>) => {
+        tbody.empty();
         for (let employee of response) {
             addRow(employee);
         }

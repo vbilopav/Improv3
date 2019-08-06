@@ -2,13 +2,18 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace Improv3.Services
 {
-    public class DataService
+    public interface IDataService
+    {
+        Task<string> GetString(string command, Action<NpgsqlParameterCollection> parameters = null);
+        Task<string> GetString(string command, Func<NpgsqlParameterCollection, Task> parameters = null);
+    }
+
+    public class DataService : IDataService
     {
         private readonly NpgsqlConnection _connection;
         private readonly ILoggerFactory _loggerFactory;

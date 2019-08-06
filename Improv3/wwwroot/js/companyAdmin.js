@@ -104,6 +104,7 @@
     var tooltip = function (e, title) { return e
         .tooltip("dispose")
         .attr("title", title)
+        .tooltip({ trigger: "manual" })
         .tooltip("show")
         .focus(); };
     modalOk.click(function () {

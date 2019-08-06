@@ -37,6 +37,9 @@ window.subscribe("/sector/change", function (id, name) {
         row.find("input").on("input", function () { return inputChanged(row); });
         tbody.append(row);
     };
+    var tooltip = function (e, msg) {
+        return e.tooltip("dispose").attr("title", msg).tooltip({ trigger: "manual" }).tooltip("show");
+    };
     var handleTableInputChange = function (row, done) {
         var inputs = row.find("input");
         var rowEl = row.find("th>div.row-id");
@@ -56,7 +59,7 @@ window.subscribe("/sector/change", function (id, name) {
             return done();
         }
         if (!validateEmail(employee.email)) {
-            $(inputs[2]).tooltip("dispose").attr("title", "Email is not valid.").tooltip({ trigger: "manual" }).tooltip("show");
+            tooltip($(inputs[2]), "Email is not valid.");
             return done();
         }
         $(inputs[2]).tooltip("dispose");
@@ -67,13 +70,14 @@ window.subscribe("/sector/change", function (id, name) {
             if (employee.id == null) {
                 addRow({ id: null, firstName: "", lastName: "", email: "" });
             }
-            row.data("id", employee.id);
-        }).always(done).fail(function () {
-            rowEl.css("color", "red");
+            row.data("id", response.id);
+        }).always(done).fail(function (response) {
+            console.warn(response.responseJSON);
+            tooltip(rowEl.css("color", "red"), "Couldn't update this row. There is something wrong with database.");
         });
     };
     var inputChanged = function (row) {
-        row.find("input.email").tooltip("dispose");
+        row.find("input, div").tooltip("dispose");
         toggleLoadingRow(row, true);
         if (inputTimeout) {
             clearTimeout(inputTimeout);
@@ -83,6 +87,7 @@ window.subscribe("/sector/change", function (id, name) {
         }, 250);
     };
     $.getJSON("api/employees-by-sector?sectorId=" + id, function (response) {
+        tbody.empty();
         for (var _i = 0, response_1 = response; _i < response_1.length; _i++) {
             var employee = response_1[_i];
             addRow(employee);

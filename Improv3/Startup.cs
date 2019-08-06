@@ -28,7 +28,8 @@ namespace Improv3
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddScoped<NpgsqlConnection, NpgsqlConnection>(provider => new NpgsqlConnection(Configuration.GetConnectionString("Improv3DbContextConnection")));
-            services.AddScoped<DataService, DataService>();
+            services.AddScoped<IDataService, DataService>();
+            services.AddScoped<IDataContentService, DataContentService>();
 
             services.Configure<CookiePolicyOptions>(options =>
             {

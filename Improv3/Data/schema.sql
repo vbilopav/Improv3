@@ -56,6 +56,13 @@ begin
 end
 $$;
 
+create or replace function extract_record_attributes(_input json) returns json as
+$$
+begin
+    return json_build_object('timestamp', now() at time zone 'utc')::jsonb || (coalesce(_input#>'{attributes}', '{}'))::jsonb;
+end
+$$ language plpgsql;
+
 create function select_company_and_sectors(_user_id int)
 returns json as
 $$
@@ -79,20 +86,15 @@ begin
 end
 $$ language plpgsql;
 
-create or replace function extract_record_attributes(_input json) returns json as
-$$
-begin
-    return json_build_object('timestamp', now() at time zone 'utc')::jsonb || (coalesce(_input#>'{attributes}', '{}'))::jsonb;
-end
-$$ language plpgsql;
-
 create function update_company(_user_id int, _company json)
 returns json as
 $$
 declare _result json;
 declare _attributes json;
 begin
+    raise info '%', _company;
     _attributes = extract_record_attributes(_company);
+    
     with cte as (
         update companies 
         set name = _company->>'name', attributes = _attributes where user_id = _user_id
@@ -120,10 +122,9 @@ declare _company_id int;
 declare _id int;
 declare _attributes json;
 begin
-
+    raise info '%', _sector;
     _company_id = (_sector->>'companyId')::int;
     _id = (_sector->>'id')::int;
-    raise info 'id=%, company_id=%, name=%', _id, _company_id, _sector->>'name';
     _attributes = extract_record_attributes(_sector);
 
     if _id is null then
@@ -145,10 +146,6 @@ begin
     end if;
 
     return _result;
-    
-    exception when unique_violation then
-        raise warning 'unique_violation for sector %s', _sector;
-        return '{"error": "unique_violation"}'::json;
 end
 $$ language plpgsql;
 
@@ -176,11 +173,9 @@ declare _sector_id int;
 declare _id int;
 declare _attributes json;
 begin
-
+    raise info '%', _employee;
     _sector_id = (_employee->>'sectorId')::int;
     _id = (_employee->>'id')::int;
-    raise info 'id=%, sector_id=%, first_name=%, last_name=%, email=%', 
-               _id,  _sector_id,  _employee->>'firstName', _employee->>'lastName', _employee->>'email';
     _attributes = extract_record_attributes(_employee);
 
     if _id is null then
@@ -207,10 +202,6 @@ begin
     end if;
 
     return _result;
-    
-    exception when unique_violation then
-        raise warning 'unique_violation for sector %s', _sector;
-        return '{"error": "unique_violation"}'::json;
 end
 $$ language plpgsql;
 

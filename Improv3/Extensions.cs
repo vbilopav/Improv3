@@ -47,7 +47,7 @@ namespace Improv3
         {
             var attributes = obj["attributes"] ?? JToken.Parse("{}");
             attributes[key] = value;
-            obj["attributes"] = obj;
+            obj["attributes"] = attributes;
         }
     }
 
