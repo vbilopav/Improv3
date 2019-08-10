@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
 
 
 namespace Improv3
@@ -57,9 +59,29 @@ namespace Improv3
         public async Task<ContentResult> PostEmployeeAsync([FromBody]JObject request)
         {
             request.AddAttribute("clientIp", Request.HttpContext.Connection.RemoteIpAddress.ToString());
-
+            var emailValidator = new EmailAddressAttribute();
+            if (!emailValidator.IsValid((string)request["email"]))
+            {
+                return new ContentResult
+                {
+                    StatusCode = 400,
+                    Content = JsonConvert.SerializeObject(new
+                    {
+                        messeage = "Email is not valid.",
+                        column = "email",
+                        error = true
+                    }),
+                    ContentType = "application/json"
+                };
+            }
             return await _content.GetContentAsync("select update_employees(@employee::json)",
                 parameters => parameters.AddWithValue("employee", request.ToString()));
         }
+
+        [HttpPost]
+        [Route("api/delete-employee")]
+        public async Task<ContentResult> DeleteEmployeesBySector(int id) =>
+            await _content.GetContentAsync("select delete_employees(@id)",
+                parameters => parameters.AddWithValue("id", id));
     }
 }

@@ -31,8 +31,7 @@ namespace Improv3.Services
             using (var cmd = new NpgsqlCommand(command, _connection))
             {
                 parameters?.Invoke(cmd.Parameters);
-                using (var reader = cmd.ExecuteReader())
-                    return await reader.ReadAsync() ? reader.GetString(0) : null;
+                return await GetStringContentFromCommand(cmd);
             }
         }
 
@@ -46,11 +45,22 @@ namespace Improv3.Services
                 {
                     await parameters?.Invoke(cmd.Parameters);
                 }
-
-                using (var reader = cmd.ExecuteReader())
-                    return await reader.ReadAsync() ? reader.GetString(0) : null;
+                return await GetStringContentFromCommand(cmd);
             }
         }
+
+        private static async Task<string> GetStringContentFromCommand(NpgsqlCommand cmd)
+        {
+            using (var reader = cmd.ExecuteReader())
+            {
+                if (!await reader.ReadAsync())
+                {
+                    return null;
+                }
+                return reader.GetFieldType(0) == DBNull.Value.GetType() ? null : reader.GetString(0);
+            }
+        }
+
 
         private static readonly IEnumerable<string> InfoLevels = new[] { "INFO", "NOTICE", "LOG" };
         private static readonly IEnumerable<string> ErrorLevels = new[] { "ERROR", "PANIC" };

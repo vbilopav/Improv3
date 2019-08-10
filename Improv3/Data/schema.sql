@@ -205,4 +205,12 @@ begin
 end
 $$ language plpgsql;
 
+create or replace function delete_employees(_id json) returns void as
+$$
+begin
+    raise info '%', _id;
+    delete from employees where id = _id;
+end
+$$ language plpgsql;
+
 

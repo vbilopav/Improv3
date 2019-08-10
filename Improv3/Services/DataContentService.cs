@@ -19,6 +19,7 @@ namespace Improv3.Services
     {
         private readonly IDataService _data;
         private readonly ILogger<IDataService> _logger;
+        private const string DefaultValue = "{}";
 
         public DataContentService(IDataService data, ILogger<IDataService> logger)
         {
@@ -33,14 +34,14 @@ namespace Improv3.Services
                 return new ContentResult
                 {
                     StatusCode = 200,
-                    Content = await _data.GetString(command, parameters),
+                    Content = await _data.GetString(command, parameters) ?? DefaultValue,
                     ContentType = "application/json"
                 };
             }
             catch (PostgresException e)
             {
                 _logger.LogError(e, FormatPostgresExceptionMessage(e));
-                return BadRequestContent(e.MessageText);
+                return BadRequestContent(e);
             }
         }
 
@@ -51,26 +52,33 @@ namespace Improv3.Services
                 return new ContentResult
                 {
                     StatusCode = 200,
-                    Content = await _data.GetString(command, parameters),
+                    Content = await _data.GetString(command, parameters) ?? DefaultValue,
                     ContentType = "application/json"
                 };
             }
             catch (PostgresException e)
             {
                 _logger.LogError(e, FormatPostgresExceptionMessage(e));
-                return BadRequestContent(e.MessageText);
+                return BadRequestContent(e);
             }
         }
 
-        private static ContentResult BadRequestContent(string message) => new ContentResult
+        private static ContentResult BadRequestContent(PostgresException e) => new ContentResult
         {
             StatusCode = 400,
-            Content = JsonConvert.SerializeObject(new {messeage = message, error = true}),
+            Content = JsonConvert.SerializeObject(new
+            {
+                messeage = e.MessageText,
+                details = e.Detail,
+                table = e.TableName,
+                column = e.ColumnName,
+                constraint = e.ConstraintName,
+                error = true
+            }),
             ContentType = "application/json"
         };
 
-        private static string FormatPostgresExceptionMessage(PostgresException e) =>
-            $"Severity: {e.Severity}\n" +
+        private static string FormatPostgresExceptionMessage(PostgresException e) => $"{e.Severity}\n" +
             $"Message: {e.Message}\n" +
             $"Detail: {e.Detail}\n" +
             $"Line: {e.Line}\n" +
