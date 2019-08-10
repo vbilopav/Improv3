@@ -8,26 +8,38 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Mail;
+using Improv3.Models;
 using Improv3.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace Improv3
 {
     public class Startup
     {
+        private readonly IConfiguration _configuration;
+
         public Startup(IConfiguration configuration)
         {
-            Configuration = configuration;
+            _configuration = configuration;
         }
-
-        public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddScoped<NpgsqlConnection, NpgsqlConnection>(provider => new NpgsqlConnection(Configuration.GetConnectionString("Improv3DbContextConnection")));
+            services.AddDbContext<Improv3IdentityContext>(options =>
+            {
+                options.UseNpgsql(_configuration.GetPgCloudConnectionString("Improv3IdentityContextConnection"));
+            });
+            services.AddIdentity<ApplicationUser, IdentityRole<long>>()
+                .AddEntityFrameworkStores<Improv3IdentityContext>()
+                .AddDefaultTokenProviders();
+
+            services.AddScoped<NpgsqlConnection, NpgsqlConnection>(provider => new NpgsqlConnection(_configuration.GetPgCloudConnectionString("Improv3DbContextConnection")));
             services.AddScoped<IDataService, DataService>();
             services.AddScoped<IDataContentService, DataContentService>();
 
@@ -70,25 +82,21 @@ namespace Improv3
                 options.ReturnUrlParameter = CookieAuthenticationDefaults.ReturnUrlParameter;
                 options.SlidingExpiration = true;
             });
-            services.AddTransient<IEmailSender>(provider =>
-            {
-                var config = provider.GetRequiredService<IConfiguration>();
-                return new Services.EmailSender(
-                    new SmtpClient
-                    {
-                        Host = config.GetValue<string>("Email:Smtp:Host"),
-                        Port = config.GetValue<int>("Email:Smtp:Port"),
-                        Credentials = new NetworkCredential(
-                            config.GetValue<string>("Email:Smtp:Username"),
-                            config.GetValue<string>("Email:Smtp:Password")
-                        )
-                    },
-                    config.GetValue<string>("Email:From"));
-            });
+            services.AddTransient<IEmailSender>(provider => new EmailSender(
+                new SmtpClient
+                {
+                    Host = _configuration.GetValue<string>("Email:Smtp:Host"),
+                    Port = _configuration.GetValue<int>("Email:Smtp:Port"),
+                    Credentials = new NetworkCredential(
+                        _configuration.GetValue<string>("Email:Smtp:Username"),
+                        _configuration.GetValue<string>("Email:Smtp:Password")
+                    )
+                },
+                _configuration.GetValue<string>("Email:From")));
             services.AddAuthentication()
                 .AddGoogle(options =>
                 {
-                    var googleAuthNSection = Configuration.GetSection("Authentication:Google");
+                    var googleAuthNSection = _configuration.GetSection("Authentication:Google");
                     options.ClientId = googleAuthNSection["ClientId"];
                     options.ClientSecret = googleAuthNSection["ClientSecret"];
                 });

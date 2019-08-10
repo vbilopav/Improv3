@@ -17,6 +17,8 @@ namespace Improv3.Services
     {
         private readonly NpgsqlConnection _connection;
         private readonly ILoggerFactory _loggerFactory;
+        private static readonly IEnumerable<string> InfoLevels = new[] { "INFO", "NOTICE", "LOG" };
+        private static readonly IEnumerable<string> ErrorLevels = new[] { "ERROR", "PANIC" };
 
         public DataService(NpgsqlConnection connection, ILoggerFactory loggerFactory)
         {
@@ -60,10 +62,6 @@ namespace Improv3.Services
                 return reader.GetFieldType(0) == DBNull.Value.GetType() ? null : reader.GetString(0);
             }
         }
-
-
-        private static readonly IEnumerable<string> InfoLevels = new[] { "INFO", "NOTICE", "LOG" };
-        private static readonly IEnumerable<string> ErrorLevels = new[] { "ERROR", "PANIC" };
 
         private void HandleLogging(string command)
         {
